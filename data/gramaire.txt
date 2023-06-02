@@ -1,0 +1,14 @@
+P : debut S fin
+S : I R
+R : ; I R
+I : eps
+I : id := E
+I : eps
+E : T E'
+E': + T E'
+T : F T'
+T' : * F T'
+T' : eps
+F : ( E )
+F : id
+F : nb
