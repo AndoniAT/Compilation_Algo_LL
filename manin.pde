@@ -6,16 +6,19 @@
 */
 String[][] tab = {};
 String[][] gramaire = {};
-String code;
+String[] code;
 String[] pile = {"$"};
+int initX = 20;
 
 void setup() {
+  size(900, 750);
   tab = readTableFile("tableauGramaire.txt");
   gramaire = readTableFile("gramaire.txt");
-  String[] code = loadStrings("entree.txt");
+  code = loadStrings("entree.txt");
   for(int i = 0 ; i < code.length ; i++) {
     println(code[i]);
   }
+  
   
 }
 
@@ -49,5 +52,32 @@ String[][] readTableFile(String src) {
 }
 
 void draw() {
+  background(10);
   
+  // Afficher l'entree
+  fill(200); // définit la couleur de remplissage à noir pour le texte
+  textSize(50);
+  textAlign(CENTER, CENTER); // centre le texte dans la boîte
+  String s = "";
+  for(int i = 0 ; i < code.length; i++) {
+    s += code[i];
+  }
+  text(s, width/2, 50);
+  textSize(20);
+  
+  int x = initX;
+  int x2 = 50;
+  int y = 500;
+  int y2 = 30;
+  for(int i = 0 ; i < pile.length; i++) {
+    fill(255, 255, 255);
+    rect(x, y, x2, y2);
+    
+    fill(0); // définit la couleur de remplissage à noir pour le texte
+    textAlign(CENTER, CENTER); // centre le texte dans la boîte
+    text(pile[i], x+x2/2, y+y2/2); // affiche le texte dans la boîte
+  }
+  
+  
+    
 }
