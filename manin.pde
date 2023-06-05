@@ -8,8 +8,8 @@ String[][] tab = {};
 String[][] gramaire = {};
 String[] code;
 String[] pile = {"$"};
-int initX = 20;
-
+int initX = 0;
+String[][] historique = {pile};
 void setup() {
   size(900, 750);
   tab = readTableFile("tableauGramaire.txt");
@@ -18,8 +18,6 @@ void setup() {
   for(int i = 0 ; i < code.length ; i++) {
     println(code[i]);
   }
-  
-  
 }
 
 /**
@@ -66,18 +64,20 @@ void draw() {
   textSize(20);
   
   int x = initX;
-  int x2 = 50;
+  int widthBlock = 50;
   int y = 500;
-  int y2 = 30;
-  for(int i = 0 ; i < pile.length; i++) {
-    fill(255, 255, 255);
-    rect(x, y, x2, y2);
+  int hauteur = 30;
+  for(int i = 0 ; i < historique.length; i++) {
+    String[] pile = historique[i];
+    x+= 20;
     
-    fill(0); // définit la couleur de remplissage à noir pour le texte
-    textAlign(CENTER, CENTER); // centre le texte dans la boîte
-    text(pile[i], x+x2/2, y+y2/2); // affiche le texte dans la boîte
-  }
-  
-  
-    
+    for(int j = 0 ; j < pile.length; j++) {
+      fill(255, 255, 255);
+      rect(x, y, widthBlock, hauteur);
+
+      fill(0); // définit la couleur de remplissage à noir pour le texte
+      textAlign(CENTER, CENTER); // centre le texte dans la boîte
+      text(pile[j], x+widthBlock/2, y+hauteur/2); // affiche le texte dans la boîte
+    }
+  }   
 }
