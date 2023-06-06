@@ -4,12 +4,16 @@
   M1 IWOCS INFORMATIQUE
   COMPILATION
 */
-String[][] tab = {};
-String[][] gramaire = {};
-String[][] code;
+ArrayList<ArrayList<String>> tab;
+ArrayList<ArrayList<String>> gramaire;
+ArrayList<ArrayList<String>> code;
+ArrayList<ArrayList<String>> codeWork;
+
 int initX = 0;
-ArrayList<String[]> historique;
-String[] lastPile;
+
+ArrayList<ArrayList<String>> historique;
+
+ArrayList<String> lastPile;
 
 int idxLineCodeWork = 0;
 int idxColCodeWork = 0;
@@ -22,52 +26,40 @@ void setup() {
   size(1000, 800, P3D);
   surface.setTitle("Hello World!");
   surface.setResizable(true);
-   historique = new ArrayList<String[]>();
-   String[] pileInit = {"$"};
-   historique.add(pileInit);
+   historique = new ArrayList<ArrayList<String>>();
+   
+   lastPile = new ArrayList<String>();
+   lastPile.add("$"); // First Element dans la pile
+   historique.add(lastPile);
    
   // Lecture de la gramaire
   gramaire = readTableFile("gramaire.txt");
-  String[] fistEl =  { gramaire[0][0] };
-  createNewPile(fistEl);
-  lastElementInTable= fistEl[0];
-  //historique.add();
-  //println(gramaire[0]);
-  
+
   // Lecture du tableau
   tab = readTableFile("tableauGramaire.txt");
   
   // Lecture de l'entree
   code = readTableFile("entree.txt");
-  setActualColonneInTable();
+  codeWork = new ArrayList<ArrayList<String>>(code);
+  
+  // Faire evoluer pour commencer
+  faireEvoluerHistoriuque();
 }
 
 /**
   Methode pur lire un fichier et le retourner dans un tableau de deux dimensions
 */
-String[][] readTableFile(String src) {
-  String[][] table = {};
-  String[] lignes = loadStrings(src);
-  boolean valid = false;
+ArrayList<ArrayList<String>> readTableFile(String src) {
+  ArrayList<ArrayList<String>> table = new ArrayList<ArrayList<String>>();
+  ArrayList<String> lignes = new ArrayList<String>(changeToList( (String[]) loadStrings(src)));
   
-  for(int i = 0 ; i < lignes.length ; i++) {
-    String[] parties = split(lignes[i], ' ');
-    String s = "Ligne " + i + " : ";
-     if(!valid) {
-       table = new String[lignes.length][parties.length];
-       valid = true;
-     }
-     //println(parties.length);
-    for(int j = 0 ; j < parties.length ; j++) {
-      table[i][j] = parties[j];
-       s += "| " + parties[j] + " |";
-    }
-    //println(s);
+  
+  for(int i = 0 ; i < lignes.size() ; i++) {
+    ArrayList<String> parties = new ArrayList<String>(changeToList(split(lignes.get(i), ' ')));
+    table.add(parties);
   }
   
-  for(int i = 0 ; i < table.length ; i++) {
-    //println(table[i]);
-  }
+  //println(table.toString());
   return table;
 }
 
@@ -76,6 +68,7 @@ void draw() {
   color orange = color(218,177,81);
   color vert = color(104, 210, 101);
   color bleu = color(104, 100, 255);
+  
   //  == Afficher l'entree ==
   pushMatrix();
     // Carré conteneur
@@ -86,8 +79,8 @@ void draw() {
     textAlign(CENTER, CENTER); // centre le texte dans la boîte
     String s = "";
     int xEntreInit = 20;
-    for(int i = 0 ; i < code.length; i++) {
-      for(int j = 0 ; j < code[i].length; j++) {
+    for(int i = 0 ; i < code.size(); i++) {
+      for(int j = 0 ; j < code.get(i).size(); j++) {
         pushMatrix();
           translate(xEntreInit,30, 0);
         if(i == idxLineCodeWork && j == idxColCodeWork) {
@@ -96,8 +89,8 @@ void draw() {
           fill(0);
         }
         //s += code[i][j] + " ";
-        text(code[i][j], xEntreInit, 0);
-        xEntreInit+= (code[i][j].length() * 5) + 10;
+        text(code.get(i).get(j), xEntreInit, 0);
+        xEntreInit+= (code.get(i).get(j).length() * 5) + 10;
         popMatrix();
       }
     }
@@ -112,16 +105,16 @@ void draw() {
     noFill();
     fill(255);
     stroke(255);
-    rect(0, 0, tab.length*35, (gramaire.length*32));  // Dessine le carré
+    rect(0, 0, tab.size()*35, (gramaire.size()*32));  // Dessine le carré
     
     // Table
     float yLigne = 15;
     
     int ligneRegle = 0;
     int colRegle = 0;
-    for(int i = 0 ; i < tab.length ; i++) {
+    for(int i = 0 ; i < tab.size() ; i++) {
       float xCol = 28;
-      for(int j = 0 ; j < tab[i].length ; j++) {
+      for(int j = 0 ; j < tab.get(i).size() ; j++) {
         color colorElement = color(0);
         int sizeTxt = 15;
         
@@ -129,7 +122,7 @@ void draw() {
         if(i == 0 ) {
           //println("check equalite");
           //println(tab[i][j] + " == " + code[idxLineCodeWork][idxColCodeWork] + " => " + tab[i][j].equals(code[idxLineCodeWork][idxColCodeWork]));
-          if(tab[i][j].equals(code[idxLineCodeWork][idxColCodeWork])) {
+          if(tab.get(i).get(j).equals(code.get(idxLineCodeWork).get(idxColCodeWork))) {
             colorElement = orange;
             sizeTxt = 17;
             colRegle = j; // On établi la colone de la regle que l'on va utiliser
@@ -138,7 +131,7 @@ void draw() {
         
         // Si on est dans la premier colonne verifier le dernier element qu'il y a dans la pile
         if(j == 0) {
-          if(tab[i][j].equals(lastElementInTable)) {
+          if(tab.get(i).get(j).equals(lastElementInTable)) {
             textSize(17);
             fill(104, 210, 101);
             sizeTxt = 17;
@@ -148,7 +141,7 @@ void draw() {
           }
         }
         if(ligneRegle>0 && colRegle > 0) {
-          regleSet = tab[ligneRegle][colRegle];
+          regleSet = tab.get(ligneRegle).get(colRegle);
         }
         
         // colorer la regle actuel
@@ -156,7 +149,7 @@ void draw() {
         
         fill(colorElement);
         textSize(sizeTxt);
-        text(tab[i][j], xCol, yLigne);
+        text(tab.get(i).get(j), xCol, yLigne);
         xCol+=60;
       }
       yLigne+=20;
@@ -175,7 +168,7 @@ void draw() {
     noFill();
     fill(0);
     stroke(255);
-    rect(0, 0, 200, (gramaire.length*20) + 40);  // Dessine le carré
+    rect(0, 0, 200, (gramaire.size()*20) + 40);  // Dessine le carré
     
     // Gramaire texte
     float initY = 10;
@@ -185,13 +178,13 @@ void draw() {
     textSize(15);
     initY+=40;
     textAlign(LEFT);
-    for(int i = 0 ; i < gramaire.length; i++) {
+    for(int i = 0 ; i < gramaire.size(); i++) {
         color coloGram = color(255);
         String gram = "("+int(i+1)+") ";
         
-        for(int j = 0 ; j < gramaire[i].length; j++) {
+        for(int j = 0 ; j < gramaire.get(i).size(); j++) {
           
-           gram+= gramaire[i][j] != null ? gramaire[i][j].equals(":") ? " => " : gramaire[i][j] + " " : "";
+           gram+= gramaire.get(i).get(j) != null ? gramaire.get(i).get(j).equals(":") ? " => " : gramaire.get(i).get(j) + " " : "";
         }
         int numGram = i + 1;
         if(regleSet.equals(numGram+"")) coloGram = bleu;
@@ -223,11 +216,11 @@ void draw() {
   int y = 500;
   int xHistorique = 0;
   for(int i = 0 ; i < historique.size(); i++) {
-    String[] pile = historique.get(i);
+    ArrayList<String> pile = historique.get(i);
     
     int hauteur = 30;
-    for(int j = 0 ; j < pile.length; j++) {
-      if(i == historique.size()-1 && j == pile.length -1) {
+    for(int j = 0 ; j < pile.size(); j++) {
+      if(i == historique.size()-1 && j == pile.size() -1) {
         fill(vert);
       } else {
         fill(255, 255, 255);
@@ -238,7 +231,7 @@ void draw() {
 
       fill(0); // définit la couleur de remplissage à noir pour le texte
       textAlign(CENTER, CENTER); // centre le texte dans la boîte
-      text(pile[j], xHistorique+widthBlock/2, hauteur-hauteur/2); // affiche le texte dans la boîte
+      text(pile.get(j), xHistorique+widthBlock/2, hauteur-hauteur/2); // affiche le texte dans la boîte
       hauteur -= 60 ; 
     }
     xHistorique+=widthBlock+10;
@@ -247,19 +240,15 @@ void draw() {
   // ======================
 }
 
-void keyPressed() {
-  println("pressed");
-  println(key);
-  
+void keyPressed() {  
   if(keyCode == LEFT) {
-    println("left");
     popHistorique();
   }
   
   if(keyCode == RIGHT) {
-    println("rigth");
     faireEvoluerHistoriuque();
   }
+  
   println(keyCode);
 }
 
@@ -269,11 +258,43 @@ void popHistorique() {
 
 void faireEvoluerHistoriuque(){
   println("Faire evoluer");
-  //println("next character to analyze => " + code[idxLineCodeWork][idxColCodeWork]);
-  //println("Last Pile");
-  String[] last = getLastPile();
-  lastElementInTable = last[last.length-1];
-  //println("LastElement => " + lastElementInTable);
+  println("next character to analyze => " + codeWork.get(0).get(0));
+  
+  ArrayList<String> last = getLastPile();
+  println("Last Pile : " + last.toString());
+  
+  if(last.size() == 1 && codeWork.size() > 0) {
+    println("Start, ajouter => " + gramaire.get(0).get(0));
+    createNewPile(changeToList( new String[] {  gramaire.get(0).get(0) } ), false );
+  }
+  
+  /*lastElementInTable = last[last.length-1];
+  println("LastElement => " + lastElementInTable);
+  int regle = 0;
+  if(regleSet.equals("pop")) {
+    // pop in pile
+  } else {
+    regle = int(regleSet);
+    
+    // Obtenir le texte de la regle puor remplacer
+    String regleTxt = "";
+    String[] regleArray = new String[gramaire[regle-1].length-2];
+    
+    for(int col = 2, i = 0; col< gramaire[regle-1].length;col++, i++){
+      regleTxt+=gramaire[regle-1][col] + " ";
+      regleArray[i] = gramaire[regle-1][col]; 
+    }
+    
+    println("Regle Index => " + regle);
+    println("Remplacer '" + lastElementInTable + "' par => ' "+ regleTxt + " '");
+    println("Regle Array");
+    for(int i = 0 ; i < regleArray.length ; i++ ) {
+      println(regleArray[i]);
+    }
+    createNewPile(regleArray);
+  }*/
+  
+  
   /*for(int i = 0 ; i < last.length ; i++) {
     
     
@@ -282,29 +303,47 @@ void faireEvoluerHistoriuque(){
   
 }
 
-void createNewPile(String[] s) {
-  String[] lastHistory = historique.get(historique.size()-1);
-  lastPile = new String[lastHistory.length + s.length];
+void createNewPile(ArrayList<String> s, boolean replace) {
+  println("Create new PIle");
   
-  String[] newPile = new String[lastHistory.length + 1];  
+  println("S parameters =>" + s.toString());
   
-  for(int i = 0 ; i < lastHistory.length ; i++ ) {
-    newPile[i] = lastHistory[i];
+  ArrayList<String> lastHistory = new ArrayList<String>(getLastPile());
+  
+  // S'il faut remplacer on va faire un pop
+  println("Last history => " + lastHistory.toString());
+  if(replace) {
+    println("Replace, donc suppression dernier element => " + lastHistory.toString());
+    lastHistory.remove(lastHistory.size()-1);
+  } else {
+    println("Ne pas remplacer");
   }
   
-  for(int idx = lastHistory.length, i = 0; i < s.length ; i++ ) {
-    newPile[idx] = s[i];
-  }
+  // Creer nouvelle pile
+  ArrayList<String> newPile = new ArrayList<>();
+  newPile.addAll(lastHistory);
+  newPile.addAll(s);
+  
+  println("NEW PILE => " + newPile);
+  
+  // Mettre a jour le dernier element dans la table
+  lastElementInTable = newPile.get(newPile.size()-1);
+  // =================================
   historique.add(newPile);
 }
 
-String[] getLastPile() {
+ArrayList<String> getLastPile() {
   return historique.get(historique.size()-1);
 }
 
-void setActualColonneInTable() {
-  String wordToTrait = code[idxLineCodeWork][idxColCodeWork];
-  println("set actualColonne");
-  //println(wordToTrait);
-  
+void afficherTable(String[] t) {
+  String s = "";
+  for(int i=0; i < t.length; i++) s +=t[i] + " | ";
+  println(s);
+}
+
+ArrayList<String> changeToList(String[] tab) {
+  ArrayList<String> newList = new ArrayList<String>();
+  for(int i = 0 ; i < tab.length ; i++) newList.add(tab[i]);
+  return newList;
 }
