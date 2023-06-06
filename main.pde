@@ -40,7 +40,10 @@ void setup() {
   
   // Lecture de l'entree
   code = readTableFile("entree.txt");
-  codeWork = new ArrayList<ArrayList<String>>(code);
+  codeWork = new ArrayList<ArrayList<String>>();
+  
+  // Recopie Lists
+  for (ArrayList<String> list : code) codeWork.add(new ArrayList<>(list)); 
   
   // Faire evoluer pour commencer
   faireEvoluerHistoriuque();
@@ -68,6 +71,8 @@ void draw() {
   color orange = color(218,177,81);
   color vert = color(104, 210, 101);
   color bleu = color(104, 100, 255);
+  color rouge = color(159, 8, 8);
+  color grise = color(128, 128, 128);
   
   //  == Afficher l'entree ==
   pushMatrix();
@@ -85,9 +90,13 @@ void draw() {
           translate(xEntreInit,30, 0);
         if(i == idxLineCodeWork && j == idxColCodeWork) {
           fill(orange);
+        } else if(i <= idxLineCodeWork && j < idxColCodeWork){
+          fill(grise);
         } else {
           fill(0);
         }
+        
+        
         //s += code[i][j] + " ";
         text(code.get(i).get(j), xEntreInit, 0);
         xEntreInit+= (code.get(i).get(j).length() * 5) + 10;
@@ -120,9 +129,27 @@ void draw() {
         
         // Si on est dans la premier ligne verifier dans quelle colonne onse trouve actuellement
         if(i == 0 ) {
-          //println("check equalite");
-          //println(tab[i][j] + " == " + code[idxLineCodeWork][idxColCodeWork] + " => " + tab[i][j].equals(code[idxLineCodeWork][idxColCodeWork]));
-          if(tab.get(i).get(j).equals(code.get(idxLineCodeWork).get(idxColCodeWork))) {
+          String motCode = code.get(idxLineCodeWork).get(idxColCodeWork);
+          ArrayList<String> lang = new ArrayList<>(tab.get(0));
+          lang.remove(lang.indexOf("id"));
+          lang.remove(lang.indexOf("nb"));
+          println("Lang => "  + lang );
+          boolean validate = false;
+          
+          int indexMot = lang.indexOf(motCode);
+          
+          if(indexMot == -1) {
+                // Si c'est pas un nombre alors c'est un id
+                if(Float.isNaN(float(motCode))) {
+                  validate = (tab.get(i).get(j).equals("id")) ? true : validate;
+                } else {
+                  // C'est un nombre
+                  validate = (tab.get(i).get(j).equals("nb")) ? true : validate;
+                }
+          }
+          
+          // Check orange dans la premier ligne (correspond au mot suivant dans notre entree)
+          if(tab.get(i).get(j).equals(motCode) || validate) {
             colorElement = orange;
             sizeTxt = 17;
             colRegle = j; // On établi la colone de la regle que l'on va utiliser
@@ -132,12 +159,9 @@ void draw() {
         // Si on est dans la premier colonne verifier le dernier element qu'il y a dans la pile
         if(j == 0) {
           if(tab.get(i).get(j).equals(lastElementInTable)) {
-            textSize(17);
-            fill(104, 210, 101);
             sizeTxt = 17;
             colorElement = vert;
             ligneRegle = i; // On etabli la ligne de la regle que l'on va utiliser
-            
           }
         }
         if(ligneRegle>0 && colRegle > 0) {
@@ -220,6 +244,8 @@ void draw() {
     
     int hauteur = 30;
     for(int j = 0 ; j < pile.size(); j++) {
+      pushMatrix();
+        translate(0, hauteur, 0);
       if(i == historique.size()-1 && j == pile.size() -1) {
         fill(vert);
       } else {
@@ -227,12 +253,14 @@ void draw() {
       }
       
       stroke(0);
-      rect(xHistorique, 0, widthBlock, hauteur);
+      rect(xHistorique, 0, widthBlock, 30);
 
       fill(0); // définit la couleur de remplissage à noir pour le texte
       textAlign(CENTER, CENTER); // centre le texte dans la boîte
-      text(pile.get(j), xHistorique+widthBlock/2, hauteur-hauteur/2); // affiche le texte dans la boîte
-      hauteur -= 60 ; 
+      text(pile.get(j), xHistorique+widthBlock/2, 15); // affiche le texte dans la boîte
+      
+      hauteur -= 30 ;
+      popMatrix();
     }
     xHistorique+=widthBlock+10;
   }
@@ -266,41 +294,45 @@ void faireEvoluerHistoriuque(){
   if(last.size() == 1 && codeWork.size() > 0) {
     println("Start, ajouter => " + gramaire.get(0).get(0));
     createNewPile(changeToList( new String[] {  gramaire.get(0).get(0) } ), false );
+    return;
   }
   
-  /*lastElementInTable = last[last.length-1];
-  println("LastElement => " + lastElementInTable);
+  // Continuer de faire evoluer la pile
+  println("Continuer a faire evoluer");
   int regle = 0;
+  
+  println("regle actuelle => " + regleSet);
+  
   if(regleSet.equals("pop")) {
+    
+    if(codeWork.get(0).size() == 0) { // Si la premier ligne est vide, la suppriemr
+      codeWork.remove(0);
+      
+      // Index for code
+      idxLineCodeWork++; // La ligne augmente
+      idxColCodeWork = 0; // La colonne recommence a 0
+    } else {
+      // Sinon supprimer le mot prochain
+      codeWork.get(0).remove(0);
+      
+      idxColCodeWork++; // Augmenter la ligne
+    }
     // pop in pile
+    ArrayList<String> vide = new ArrayList<String>();
+    createNewPile(vide, true);
+    
+    
+    
   } else {
     regle = int(regleSet);
     
     // Obtenir le texte de la regle puor remplacer
-    String regleTxt = "";
-    String[] regleArray = new String[gramaire[regle-1].length-2];
-    
-    for(int col = 2, i = 0; col< gramaire[regle-1].length;col++, i++){
-      regleTxt+=gramaire[regle-1][col] + " ";
-      regleArray[i] = gramaire[regle-1][col]; 
-    }
-    
-    println("Regle Index => " + regle);
-    println("Remplacer '" + lastElementInTable + "' par => ' "+ regleTxt + " '");
-    println("Regle Array");
-    for(int i = 0 ; i < regleArray.length ; i++ ) {
-      println(regleArray[i]);
-    }
-    createNewPile(regleArray);
-  }*/
-  
-  
-  /*for(int i = 0 ; i < last.length ; i++) {
-    
-    
-  }*/
-  
-  
+    ArrayList<String> regleArray = new ArrayList<String>(gramaire.get(regle-1));
+    regleArray.remove(0);regleArray.remove(0); // Supprimer deux premieres colonnes => "clé" et separation ":"
+    println("Ajouter a la pile => " + regleArray.toString());
+    regleArray = inverserArray(regleArray); // Inverser
+    createNewPile(regleArray, true);
+  }
 }
 
 void createNewPile(ArrayList<String> s, boolean replace) {
@@ -323,13 +355,18 @@ void createNewPile(ArrayList<String> s, boolean replace) {
   ArrayList<String> newPile = new ArrayList<>();
   newPile.addAll(lastHistory);
   newPile.addAll(s);
-  
-  println("NEW PILE => " + newPile);
-  
-  // Mettre a jour le dernier element dans la table
-  lastElementInTable = newPile.get(newPile.size()-1);
   // =================================
   historique.add(newPile);
+  
+  // Mettre variables a jour
+  mettreAjourVariables();
+}
+
+void mettreAjourVariables() {
+  // Mettre a jour le dernier element dans la table
+  ArrayList<String> lastPile = getLastPile();
+  lastElementInTable = lastPile.get(lastPile.size()-1);
+  
 }
 
 ArrayList<String> getLastPile() {
@@ -345,5 +382,11 @@ void afficherTable(String[] t) {
 ArrayList<String> changeToList(String[] tab) {
   ArrayList<String> newList = new ArrayList<String>();
   for(int i = 0 ; i < tab.length ; i++) newList.add(tab[i]);
+  return newList;
+}
+
+ArrayList<String> inverserArray(ArrayList<String> list) {
+  ArrayList<String> newList = new ArrayList<String>();
+  for(int i = list.size()-1 ; i >=0 ; i--) newList.add(list.get(i));
   return newList;
 }
