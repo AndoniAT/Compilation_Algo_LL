@@ -6,6 +6,7 @@ I : id := E
 I : eps
 E : T E'
 E' : + T E'
+E' : eps
 T : F T'
 T' : * F T'
 T' : eps

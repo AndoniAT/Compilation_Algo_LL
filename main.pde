@@ -8,6 +8,7 @@ ArrayList<ArrayList<String>> tab;
 ArrayList<ArrayList<String>> gramaire;
 ArrayList<ArrayList<String>> code;
 ArrayList<ArrayList<String>> codeWork;
+ArrayList<String> codeDeleted = new ArrayList<String>();
 
 int initX = 0;
 
@@ -58,7 +59,13 @@ ArrayList<ArrayList<String>> readTableFile(String src) {
   
   
   for(int i = 0 ; i < lignes.size() ; i++) {
-    ArrayList<String> parties = new ArrayList<String>(changeToList(split(lignes.get(i), ' ')));
+    ArrayList<String> parties = new ArrayList<String>();
+    String[] parts = split(lignes.get(i), ' ');
+
+    for(int j = 0 ; j < parts.length ; j++) {
+      String mot = parts[j];
+      if(!mot.equals("") && !mot.equals(" ")) parties.add(mot);
+    }
     table.add(parties);
   }
   
@@ -84,8 +91,22 @@ void draw() {
     textAlign(CENTER, CENTER); // centre le texte dans la boîte
     String s = "";
     int xEntreInit = 20;
-    for(int i = 0 ; i < code.size(); i++) {
-      for(int j = 0 ; j < code.get(i).size(); j++) {
+    // Deleted
+    for(int i = 0 ; i < codeDeleted.size(); i++) {
+        pushMatrix();
+        translate(xEntreInit,30, 0);
+        fill(grise);
+        //s += code[i][j] + " ";
+        text(codeDeleted.get(i), xEntreInit, 0);
+        xEntreInit+= (codeDeleted.get(i).length() * 5) + 10;
+        popMatrix();
+    }
+
+    //println("line => " + idxLineCodeWork);
+    //println("col => " + idxColCodeWork);
+    //println("codeWork => " + codeWork.toString());
+    for(int i = 0 ; i < codeWork.size(); i++) {
+      for(int j = 0 ; j < codeWork.get(i).size(); j++) {
         pushMatrix();
           translate(xEntreInit,30, 0);
         if(i == idxLineCodeWork && j == idxColCodeWork) {
@@ -98,8 +119,19 @@ void draw() {
         
         
         //s += code[i][j] + " ";
-        text(code.get(i).get(j), xEntreInit, 0);
-        xEntreInit+= (code.get(i).get(j).length() * 5) + 10;
+        text(codeWork.get(i).get(j), xEntreInit, 0);
+        xEntreInit+= (codeWork.get(i).get(j).length() * 5) + 10;
+        popMatrix();
+      }
+    }
+    textSize(15);
+    xEntreInit = 20;
+    for(int i = 0 ; i < codeWork.size(); i++) {
+      for(int j = 0 ; j < codeWork.get(i).size(); j++) {
+        pushMatrix();
+        translate(xEntreInit,-10, 0);
+        text(codeWork.get(i).get(j), 0, 0);
+        xEntreInit+= (codeWork.get(i).get(j).length()) + 15;
         popMatrix();
       }
     }
@@ -129,24 +161,11 @@ void draw() {
         
         // Si on est dans la premier ligne verifier dans quelle colonne onse trouve actuellement
         if(i == 0 ) {
-          String motCode = code.get(idxLineCodeWork).get(idxColCodeWork);
-          ArrayList<String> lang = new ArrayList<>(tab.get(0));
-          lang.remove(lang.indexOf("id"));
-          lang.remove(lang.indexOf("nb"));
-          println("Lang => "  + lang );
+          String motCode = codeWork.get(idxLineCodeWork).get(idxColCodeWork);
           boolean validate = false;
+          String sel = validateMot(motCode);
           
-          int indexMot = lang.indexOf(motCode);
-          
-          if(indexMot == -1) {
-                // Si c'est pas un nombre alors c'est un id
-                if(Float.isNaN(float(motCode))) {
-                  validate = (tab.get(i).get(j).equals("id")) ? true : validate;
-                } else {
-                  // C'est un nombre
-                  validate = (tab.get(i).get(j).equals("nb")) ? true : validate;
-                }
-          }
+          if(tab.get(i).get(j).equals(sel)) validate = true; 
           
           // Check orange dans la premier ligne (correspond au mot suivant dans notre entree)
           if(tab.get(i).get(j).equals(motCode) || validate) {
@@ -277,51 +296,89 @@ void keyPressed() {
     faireEvoluerHistoriuque();
   }
   
-  println(keyCode);
+  //println(keyCode);
 }
 
 void popHistorique() {
+  //println("checking code deleted => " + codeDeleted.toString());
+  ArrayList<String> lastDelete = historique.remove(historique.size()-1); // Supprimer le dernier historique
+  println("Delete in historique => " + lastDelete.toString());
+  
+  ArrayList<String> lastHistorique = historique.get(historique.size()-1); // Obtenir le dernier historique après la suppresion
+  String lastElementHistorique = lastHistorique.get(lastHistorique.size()-1); // Obtenir le dernier elelment du dernier historique
+  // S'il y a encore des elements qui ont ete supprimes
+  if( codeDeleted.size() > 0 ){
+    
+    String lastElementInCodeDeleted = codeDeleted.get(codeDeleted.size()-1); // Obtenir le dernier element du code qui a ete supprime
+    boolean validated = false;
+    
+    String sel = validateMot(lastElementInCodeDeleted);
+    println("Validate mot => " + lastElementInCodeDeleted);
+    println(sel);
+    if(lastElementHistorique.equals(sel)) validated = true;
+          
+    // Comparer s'ils sont pareils, on peut recuperer l'element du code pour le reintegrer
+    if(lastElementHistorique.equals(lastElementInCodeDeleted) || validated) {
+      println("Reintegrer to =>" + codeWork.toString());
+      codeWork.get(0).add(0, new String(codeDeleted.remove(codeDeleted.size()-1)));
+      //println("Reintegrated =>" + codeWork.toString());
+      /*println("Line => "+  idxLineCodeWork);
+      println("Col => "+  idxColCodeWork);*/
+      idxColCodeWork -= idxColCodeWork > 0 ? 1 : 0;
+      idxLineCodeWork -= idxColCodeWork == 0 && idxLineCodeWork > 0 ? 1 : 0 ;
+    }
+    
+  }
+  
 
+ 
+  mettreAjourVariables();
+  println("Line => "+  idxLineCodeWork);
+  println("Col => "+  idxColCodeWork);
+  println("CodeWork to =>" + codeWork.toString());
 }
 
 void faireEvoluerHistoriuque(){
-  println("Faire evoluer");
-  println("next character to analyze => " + codeWork.get(0).get(0));
+  //println("Faire evoluer");
+  //println("next character to analyze => " + codeWork.get(0).get(0));
   
   ArrayList<String> last = getLastPile();
-  println("Last Pile : " + last.toString());
+  //println("Last Pile : " + last.toString());
   
   if(last.size() == 1 && codeWork.size() > 0) {
-    println("Start, ajouter => " + gramaire.get(0).get(0));
+    //println("Start, ajouter => " + gramaire.get(0).get(0));
     createNewPile(changeToList( new String[] {  gramaire.get(0).get(0) } ), false );
     return;
   }
   
   // Continuer de faire evoluer la pile
-  println("Continuer a faire evoluer");
+  //println("Continuer a faire evoluer");
   int regle = 0;
   
-  println("regle actuelle => " + regleSet);
+  //println("regle actuelle => " + regleSet);
   
   if(regleSet.equals("pop")) {
     
+    if(codeWork.get(0).size() > 0) { // Si la premier ligne est vide, la suppriemr
+      //println("remove element => " + codeWork.toString());
+      // Sinon supprimer le mot prochain
+      codeDeleted.add(new String(codeWork.get(0).remove(0)));
+      //println("apres element => " + codeWork.toString());
+      //idxColCodeWork++; // Augmenter la ligne
+    } 
+    
     if(codeWork.get(0).size() == 0) { // Si la premier ligne est vide, la suppriemr
+      //println("remove ligne");
       codeWork.remove(0);
       
       // Index for code
-      idxLineCodeWork++; // La ligne augmente
+      //idxLineCodeWork++; // La ligne augmente
       idxColCodeWork = 0; // La colonne recommence a 0
-    } else {
-      // Sinon supprimer le mot prochain
-      codeWork.get(0).remove(0);
-      
-      idxColCodeWork++; // Augmenter la ligne
     }
+    
     // pop in pile
     ArrayList<String> vide = new ArrayList<String>();
     createNewPile(vide, true);
-    
-    
     
   } else {
     regle = int(regleSet);
@@ -329,26 +386,26 @@ void faireEvoluerHistoriuque(){
     // Obtenir le texte de la regle puor remplacer
     ArrayList<String> regleArray = new ArrayList<String>(gramaire.get(regle-1));
     regleArray.remove(0);regleArray.remove(0); // Supprimer deux premieres colonnes => "clé" et separation ":"
-    println("Ajouter a la pile => " + regleArray.toString());
+    //println("Ajouter a la pile => " + regleArray.toString());
     regleArray = inverserArray(regleArray); // Inverser
     createNewPile(regleArray, true);
   }
 }
 
 void createNewPile(ArrayList<String> s, boolean replace) {
-  println("Create new PIle");
+  //println("Create new PIle");
   
-  println("S parameters =>" + s.toString());
+  //println("S parameters =>" + s.toString());
   
   ArrayList<String> lastHistory = new ArrayList<String>(getLastPile());
   
   // S'il faut remplacer on va faire un pop
-  println("Last history => " + lastHistory.toString());
+  //println("Last history => " + lastHistory.toString());
   if(replace) {
-    println("Replace, donc suppression dernier element => " + lastHistory.toString());
+    //println("Replace, donc suppression dernier element => " + lastHistory.toString());
     lastHistory.remove(lastHistory.size()-1);
   } else {
-    println("Ne pas remplacer");
+    //println("Ne pas remplacer");
   }
   
   // Creer nouvelle pile
@@ -376,7 +433,7 @@ ArrayList<String> getLastPile() {
 void afficherTable(String[] t) {
   String s = "";
   for(int i=0; i < t.length; i++) s +=t[i] + " | ";
-  println(s);
+  //println(s);
 }
 
 ArrayList<String> changeToList(String[] tab) {
@@ -389,4 +446,26 @@ ArrayList<String> inverserArray(ArrayList<String> list) {
   ArrayList<String> newList = new ArrayList<String>();
   for(int i = list.size()-1 ; i >=0 ; i--) newList.add(list.get(i));
   return newList;
+}
+
+String validateMot(String motCode){
+  String value = "";
+  ArrayList<String> lang = new ArrayList<>(tab.get(0));
+  lang.remove(lang.indexOf("id"));
+  lang.remove(lang.indexOf("nb"));  
+          
+  int indexMot = lang.indexOf(motCode);
+          
+  if(indexMot == -1) {
+     // Si c'est pas un nombre alors c'est un id
+     if(Float.isNaN(float(motCode))) {
+      value = "id";
+     //validate = (tab.get(i).get(j).equals("id")) ? true : validate;
+  } else {
+      // C'est un nombre
+      value = "nb";
+     //validate = (tab.get(i).get(j).equals("nb")) ? true : validate;
+     }
+  }
+  return value;
 }
