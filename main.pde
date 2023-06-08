@@ -67,6 +67,7 @@ ArrayList<ArrayList<String>> readTableFile(String path) {
 
 void draw() {
   background(200);
+  if(getLastPile().size() ==0 ) return;
   
   if(xActual > limitewidth - 60 ) {
     transX-=70;
@@ -74,13 +75,9 @@ void draw() {
   } else if (limitewidth > width && limitewidth > xActual + 60){
     limitewidth-=60;
     transX+=70;
-    
   }
   
   translate(transX, 0);
-  print("width :" + width + "\n");
-  print("Display width :" + displayWidth+ "\n");
-  
   
   // == DEFINITION DE COULEURS ==
   color orange = color(218,177,81);
@@ -146,7 +143,8 @@ void draw() {
         
         // Si on est dans la premier ligne verifier dans quelle colonne on se trouve actuellement
         if(ligne == 0 ) {
-          String resValidateMot = validateMot(codeWork.get(0).get(0)); // Retourne si le mot est "id" ou "nb" sinon, il retourne la valeur du mot
+          String mot = codeWork.size() > 0 ? codeWork.get(0).get(0) : "";
+          String resValidateMot = validateMot(mot); // Retourne si le mot est "id" ou "nb" sinon, il retourne la valeur du mot
           
           // Check orange dans la premier ligne le mot qui correspond au mot suivant dans notre entree
           if(tab.get(ligne).get(col).equals(resValidateMot)) {
@@ -166,7 +164,9 @@ void draw() {
         }
         // Une fois aue nous savon la colonne et la ligne a traiter, nous pouvons établir la régle :
         if(ligneRegle > 0 && colRegle > 0) {
+          //print("setting");
           regleSet = tab.get(ligneRegle).get(colRegle);
+          //print("setting refle finish");
         }
         
         // colorer la regle actuel
@@ -284,27 +284,30 @@ void keyPressed() {
   //println(keyCode);
 }
 
+/**
+  Methode pour supprimer un element de l'historique => revenir en arriere
+*/
 void popHistorique() {
-  //println("checking code deleted => " + codeDeleted.toString());
+  if(historique.size() == 1) return;
   ArrayList<String> lastDelete = historique.remove(historique.size()-1); // Supprimer le dernier historique
-  //println("Delete in historique => " + lastDelete.toString());
-  
   ArrayList<String> lastHistorique = historique.get(historique.size()-1); // Obtenir le dernier historique après la suppresion
   String lastElementHistorique = lastHistorique.get(lastHistorique.size()-1); // Obtenir le dernier elelment du dernier historique
+  
   // S'il y a encore des elements qui ont ete supprimes
-  if( codeDeleted.size() > 0 ){
+  if( codeDeleted.size() > 0 ) {
     
     String lastElementInCodeDeleted = codeDeleted.get(codeDeleted.size()-1); // Obtenir le dernier element du code qui a ete supprime
     boolean validated = false;
     
-    String sel = validateMot(lastElementInCodeDeleted);
-    //println("Validate mot => " + lastElementInCodeDeleted);
-    //println(sel);
-    if(lastElementHistorique.equals(sel)) validated = true;
-          
+    lastElementInCodeDeleted = validateMot(lastElementInCodeDeleted);
+    
     // Comparer s'ils sont pareils, on peut recuperer l'element du code pour le reintegrer
-    if(lastElementHistorique.equals(lastElementInCodeDeleted) || validated) {
+    if(lastElementHistorique.equals(lastElementInCodeDeleted)) {
       //println("Reintegrer to =>" + codeWork.toString());
+      if( codeWork.size() ==0 ) {
+        ArrayList<String> listnew = new ArrayList<String>();
+        codeWork.add(listnew);
+      }
       codeWork.get(0).add(0, new String(codeDeleted.remove(codeDeleted.size()-1)));
       //println("Reintegrated =>" + codeWork.toString());
       /*println("Line => "+  idxLineCodeWork);
@@ -336,7 +339,12 @@ void faireEvoluerHistoriuque(){
   // Verifier si on doit initialiser la pile
   if(last.size() == 1 && codeWork.size() > 0) {
     //println("Start, ajouter => " + gramaire.get(0).get(0));
+    
     createNewPile(changeToList( new String[] {  gramaire.get(0).get(0) } ), false );
+    return;
+  }
+  
+  if(last.size() == 1 && codeWork.size() == 0) {
     return;
   }
   
@@ -354,7 +362,7 @@ void faireEvoluerHistoriuque(){
   // Si la regle actuel à faire est pop on va créer une nouvelle pille tout en supprimant l'element a traiter de la pile actuel
   switch(regleSet) {
     case "pop" : {
-      
+
       if(codeWork.get(0).size() > 0) { // Si la premier ligne n'est pas vide
         codeDeleted.add(new String(codeWork.get(0).remove(0))); // Supprimer le prochain mot en l'ajoutant à notre liste du code qui a été supprimé
       } 
@@ -380,7 +388,7 @@ void faireEvoluerHistoriuque(){
       regleArray = inverserArray(regleArray); // Inverser
       
       // Ajouter la nouvelle regle dans la pile en remplaçant le dernier element à traiter
-      createNewPile(regleArray, true); 
+      createNewPile(regleArray, true);
     }
   }
 }
@@ -428,6 +436,7 @@ void createNewPile(ArrayList<String> listAdd, boolean replace) {
   @return l'element suivant dans la pile a traiter
 */
 String getLastElementInTable() {
+  //print("last element\n");
   // Mettre a jour le dernier element dans la table
   return getLastPile().get(getLastPile().size()-1);
 }
