@@ -122,7 +122,7 @@ void draw() {
         
       popMatrix();
       // Recopier code d'entre
-      if(codeWork.size()==0) {
+      if(codeWork.size() == 0 && historique.size() <= 1) {
        ArrayList<ArrayList<String>> codeObject = choixMots.get(actualChoice);
        for(int i = 0 ; i < codeObject.size() ; i++) {
          if(i == codeWork.size()) codeWork.add(new ArrayList<String>(codeObject.get(i)));
