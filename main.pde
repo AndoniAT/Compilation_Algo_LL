@@ -10,25 +10,25 @@ ArrayList<ArrayList<String>> historique;     // Sauvegarde toutes les evolutions
 ArrayList<ArrayList<String>> tab;           // Le tableau de la grammaire
 ArrayList<ArrayList<String>> gramaire;      // La gramaire
 ArrayList<ArrayList<String>> codeWork;      // L'entree que l'on va analyser
-ArrayList<String> codeDeleted = new ArrayList<String>();
+ArrayList<String> codeDeleted;
 
-int initX = 0;
-int idxLineCodeWork = 0; // Ligne dans le code d'entree que l'on se trouve
-int idxColCodeWork = 0;  // Colonne dans le code d'entree que l'on se trouve
-String regleSet = "0"; // Regle set par defaut 0
+int initX;
+int idxLineCodeWork; // Ligne dans le code d'entree que l'on se trouve
+int idxColCodeWork;  // Colonne dans le code d'entree que l'on se trouve
+String regleSet; // Regle set par defaut 0
 
-int transX = 0, xActual = 0, limitewidth;
+int transX, xActual, limitewidth;
+
+boolean init = false;
+
+ArrayList<ArrayList<ArrayList<String>>> choixMots = new ArrayList<>();
+int actualChoice = -1;
+int choiseMoving = -1;
 void setup() {
   size(1200, 800, P3D);
-  limitewidth = width;
   surface.setTitle("Hello World!");
   surface.setResizable(true);
   
-  historique = new ArrayList<ArrayList<String>>();
-  ArrayList<String> initPile = new ArrayList<String>();
-  initPile.add("$"); // First Element dans la pile
-  historique.add(initPile);
-   
   // Lecture de la gramaire
   gramaire = readTableFile("gramaire.txt");
 
@@ -36,10 +36,31 @@ void setup() {
   tab = readTableFile("tableauGramaire.txt");
   
   // Lecture de l'entree
-  codeWork = readTableFile("entree.txt");
-  
+  fichiersLecture();
   // Faire evoluer pour commencer
-  faireEvoluerHistoriuque();
+  //faireEvoluerHistoriuque();
+}
+
+void initVariables() {
+  initX = 0;
+  idxLineCodeWork = 0; // Ligne dans le code d'entree que l'on se trouve
+  idxColCodeWork = 0;  // Colonne dans le code d'entree que l'on se trouve
+  regleSet = "0"; // Regle set par defaut 0
+  transX = 0;
+  xActual = 0;
+  limitewidth = width;
+  
+  codeDeleted = new ArrayList<String>();
+  codeWork = new ArrayList<ArrayList<String>>();
+  historique = new ArrayList<ArrayList<String>>();
+  ArrayList<String> initPile = new ArrayList<String>();
+  initPile.add("$"); // First Element dans la pile
+  historique.add(initPile);
+}
+
+void fichiersLecture() {
+  ArrayList<ArrayList<String>> choix = readTableFile("entree.txt");
+  choixMots.add(choix);
 }
 
 /**
@@ -67,6 +88,148 @@ ArrayList<ArrayList<String>> readTableFile(String path) {
 
 void draw() {
   background(200);
+  
+  switch(actualChoice) {
+    case -1: {
+      init = false;
+      dessinerChoisir();
+      break;
+    }
+    default: {
+      if(!init) {
+        initVariables();
+        init = true;
+      }
+      pushMatrix();
+        int x  = 20; int y = 10;
+        int widthRect = 90; int heigthRect = 25;
+        translate(x, 10, 0);
+        boolean verif = verifMouse(x, x+widthRect, y, y+heigthRect);
+        color c = color(0,0,0,100);
+        
+        if(verif) {
+          c = color(0,0,0,50);
+          choiseMoving = -1;
+        }
+        
+        fill(c);
+        
+        rect(0,0,widthRect,heigthRect);
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(15);
+        text("Retourner", widthRect/2, heigthRect/2);
+        
+      popMatrix();
+      // Recopier code d'entre
+      if(codeWork.size()==0) {
+       ArrayList<ArrayList<String>> codeObject = choixMots.get(actualChoice);
+       for(int i = 0 ; i < codeObject.size() ; i++) {
+         if(i == codeWork.size()) codeWork.add(new ArrayList<String>(codeObject.get(i)));
+       }
+       
+      }
+      print("mon object");
+      print(codeWork);
+      print("\n");
+      dessinerMot();  
+    }
+  }
+  
+  
+}
+
+void dessinerChoisir() {
+  background(255);
+  pushMatrix();
+    translate(width/2,65,0);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    fill(0,0,0,180);
+    String s = " Andoni ALONSO TORT \n UNIVERSITE DU HAVRE \n Projet Compilation 2023 \n MASTER IWOCS Informatique";
+    text(s,0,0); // affiche le texte dans la boîte
+  popMatrix();
+
+  textAlign(LEFT);
+  textSize(20);
+  pushMatrix();
+    translate(50,160,0);
+    text("Veuillez choisir un code à compiler",0,0); // affiche le texte dans la boîte
+  popMatrix();
+  
+  int y = 220;
+  int x = 50;
+  for(int i = 0 ; i < choixMots.size(); i++ ) {
+    ArrayList<ArrayList<String>> code = choixMots.get(i);
+      pushMatrix();
+        translate(x, y, 0);
+        int calculY = 30+code.size()*25;
+        boolean checkFill = verifMouse(x, x+300, y, y+(calculY));
+        color fill = color(255);
+        
+        if(checkFill) {
+          choiseMoving = i;
+          fill = color(0,255,0, 40);
+        } else {
+          choiseMoving = -1;
+        }
+        
+        fill(fill);
+        stroke(0);
+        rect(0, 0, 300, calculY);
+        
+        String txt = "Code " + int(i+1);
+        fill(0);
+        if(i == 0) {
+          textSize(20);
+          txt += ": Sans erreur";
+          text(txt, 0, -20); // affiche le texte dans la boîte
+        }
+        
+      int yChange = 45;
+      for(int ligne = 0 ; ligne < code.size(); ligne++ ) {
+        ArrayList<String> ligneCode = code.get(ligne);
+        String ligneString = "";
+        for(int col = 0 ; col < ligneCode.size(); col++ ) {
+          String mot = ligneCode.get(col);
+          ligneString+=mot + " ";
+        }
+        
+        pushMatrix();
+            int xTraslate = 60;
+            if(ligne == 0 || ligne == code.size()-1) xTraslate = 40;
+            translate(xTraslate, yChange, 0);
+          
+            //String charac = code.get(ligne).get(col);
+            fill(0); // définit la couleur de remplissage à noir pour le texte
+            //textAlign(CENTER, CENTER); // centre le texte dans la boîte  
+            text(ligneString, 0, 0); // affiche le texte dans la boîte
+        popMatrix();
+        yChange+=20;
+      }
+      
+      popMatrix();
+  }
+       
+}
+
+boolean verifMouse(int initX, int finX, int initY, int finY) {
+  boolean verif = false;
+  print("mouse X =>" + mouseX + "\n");
+  print("mouse X =>" + mouseY + "\n");
+  cursor(ARROW);
+  if(mouseX >= initX && mouseX <= finX && mouseY >= initY && mouseY <= finY ) {
+    cursor(HAND);
+    verif = true;
+  }
+ return verif;
+}
+
+void mouseClicked() {
+  actualChoice = choiseMoving;
+}
+
+void dessinerMot() {
   if(getLastPile().size() ==0 ) return;
   
   if(xActual > limitewidth - 60 ) {
@@ -149,7 +312,7 @@ void draw() {
           // Check orange dans la premier ligne le mot qui correspond au mot suivant dans notre entree
           if(tab.get(ligne).get(col).equals(resValidateMot)) {
             colorElement = orange;
-            sizeTxt = 17;
+            sizeTxt = 20;
             colRegle = col; // On établi la colone de la regle que l'on va utiliser
           }
         }
@@ -157,7 +320,7 @@ void draw() {
         // Check vert dans la premier colonne l'element qui correspond au prochain element à traiter dans la pile 
         if(col == 0) {
           if(tab.get(ligne).get(col).equals(getLastElementInTable())) {
-            sizeTxt = 17;
+            sizeTxt = 20;
             colorElement = vert;
             ligneRegle = ligne; // On etabli la ligne de la regle que l'on va utiliser
           }
@@ -170,7 +333,10 @@ void draw() {
         }
         
         // colorer la regle actuel
-        if(ligne > 0 && ligne == ligneRegle && col > 0 && col == colRegle) colorElement = bleu;
+        if(ligne > 0 && ligne == ligneRegle && col > 0 && col == colRegle) { 
+          colorElement = bleu;
+          sizeTxt = 20;
+        }
         
         fill(colorElement);
         textSize(sizeTxt);
@@ -179,6 +345,12 @@ void draw() {
       }
       yLigne+=20;
       
+    }
+    
+    for( int i = 0 ; i < tab.size(); i++ ) {
+      for( int j = 0 ; j < tab.size(); j++ ) {
+         
+      }
     }
   
   popMatrix();
@@ -213,7 +385,12 @@ void draw() {
         }
         
         int numGram = ligne + 1;
-        if(regleSet.equals(numGram+"")) coloGram = bleu;
+        if(regleSet.equals(numGram+"")) { 
+          coloGram = bleu;
+          textSize(20);
+        } else {
+          textSize(15);
+        }
         
         // Definir la couleur de remplissage à noir pour le texte
         fill(coloGram); 
@@ -245,16 +422,20 @@ void draw() {
     ArrayList<String> pile = historique.get(ligne);
     int hauteur = 30;
     
-    for(int col = 0 ; col < pile.size(); col++) {
+    for(int col = 0; col < pile.size(); col++) {
       pushMatrix();
         translate(0, hauteur, 0);
-        
+    
+      color colorFill = color(239, 69, 222, 100 );
       if(ligne == historique.size()-1 && col == pile.size() -1) {
-        fill(vert);
-      } else {
-        fill(255, 255, 255);
+        colorFill = vert;
+      } else if (col==0) {
+        colorFill = color(255);
+      }else if(col % 2 == 0){
+        colorFill = color(239, 69, 222, 150 );
       }
       
+      fill(colorFill);
       stroke(0);
       rect(xHistorique, 0, widthBlock, 30);
 
@@ -273,15 +454,15 @@ void draw() {
 }
 
 void keyPressed() {  
-  if(keyCode == LEFT) {
-    popHistorique();
-  }
+  if(actualChoice >= 0) {
+    if(keyCode == LEFT) {
+      popHistorique();
+    }
   
-  if(keyCode == RIGHT) {
-    faireEvoluerHistoriuque();
+    if(keyCode == RIGHT) {
+      faireEvoluerHistoriuque();
+    }
   }
-  
-  //println(keyCode);
 }
 
 /**
