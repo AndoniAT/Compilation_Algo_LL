@@ -24,7 +24,7 @@ int actualColonneInTable;
 
 String regleSet = "0";
 void setup() {
-  size(1000, 800, P3D);
+  size(1200, 800, P3D);
   surface.setTitle("Hello World!");
   surface.setResizable(true);
    historique = new ArrayList<ArrayList<String>>();
@@ -356,6 +356,12 @@ void faireEvoluerHistoriuque(){
   int regle = 0;
   
   //println("regle actuelle => " + regleSet);
+  if(last.get(last.size()-1).equals("eps")) {
+    // pop in pile
+    ArrayList<String> vide = new ArrayList<String>();
+    createNewPile(vide, true);
+    return;
+  }
   
   if(regleSet.equals("pop")) {
     
