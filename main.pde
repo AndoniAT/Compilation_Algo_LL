@@ -18,8 +18,8 @@ int idxColCodeWork;  // Colonne dans le code d'entree que l'on se trouve
 String regleSet; // Regle set par defaut 0
 
 int transX, xActual, limitewidth;
-
 boolean init = false;
+String errorMessage = "";
 
 ArrayList<ArrayList<ArrayList<String>>> choixMots = new ArrayList<>();
 int actualChoice = -1;
@@ -56,11 +56,13 @@ void initVariables() {
   ArrayList<String> initPile = new ArrayList<String>();
   initPile.add("$"); // First Element dans la pile
   historique.add(initPile);
+  errorMessage = "";
 }
 
 void fichiersLecture() {
-  ArrayList<ArrayList<String>> choix = readTableFile("entree.txt");
-  choixMots.add(choix);
+  choixMots.add(readTableFile("entree.txt"));
+  choixMots.add(readTableFile("entree2.txt"));
+  choixMots.add(readTableFile("entree3.txt"));
 }
 
 /**
@@ -129,9 +131,9 @@ void draw() {
        }
        
       }
-      print("mon object");
+      /*print("mon object");
       print(codeWork);
-      print("\n");
+      print("\n");*/
       dessinerMot();  
     }
   }
@@ -140,7 +142,12 @@ void draw() {
 }
 
 void dessinerChoisir() {
-  background(255);
+  background(color(249, 236, 218));
+  
+  fill(213,213,213);
+  stroke(0);
+  rect(0, 0, width, 145);
+
   pushMatrix();
     translate(width/2,65,0);
     textAlign(CENTER, CENTER);
@@ -148,17 +155,20 @@ void dessinerChoisir() {
     fill(0,0,0,180);
     String s = " Andoni ALONSO TORT \n UNIVERSITE DU HAVRE \n Projet Compilation 2023 \n MASTER IWOCS Informatique";
     text(s,0,0); // affiche le texte dans la boîte
+    
   popMatrix();
-
+      
+  fill(0,0,0);
   textAlign(LEFT);
   textSize(20);
   pushMatrix();
-    translate(50,160,0);
+    translate(50,200,0);
     text("Veuillez choisir un code à compiler",0,0); // affiche le texte dans la boîte
   popMatrix();
   
-  int y = 220;
+  int y = 260;
   int x = 50;
+  choiseMoving = -1;
   for(int i = 0 ; i < choixMots.size(); i++ ) {
     ArrayList<ArrayList<String>> code = choixMots.get(i);
       pushMatrix();
@@ -170,20 +180,35 @@ void dessinerChoisir() {
         if(checkFill) {
           choiseMoving = i;
           fill = color(0,255,0, 40);
-        } else {
-          choiseMoving = -1;
-        }
+        }/* else {
+          choiseMoving = choiseMoving;
+        }*/
         
         fill(fill);
         stroke(0);
         rect(0, 0, 300, calculY);
-        
+        x+=300+50;
         String txt = "Code " + int(i+1);
         fill(0);
-        if(i == 0) {
-          textSize(20);
-          txt += ": Sans erreur";
-          text(txt, 0, -20); // affiche le texte dans la boîte
+        switch(i) {
+          case 0 : {
+            textSize(20);
+            txt += ": Sans erreur";
+            text(txt, 0, -20); // affiche le texte dans la boîte
+            break;
+          }
+          case 1 : {
+             textSize(20);
+            txt += ": Erreur => Variable sans valeur";
+            text(txt, 0, -20); // affiche le texte dans la boîte
+            break;
+          }
+          case 2 : {
+             textSize(20);
+            txt += ": Erreur => Il n'y a pas de debut";
+            text(txt, 0, -20); // affiche le texte dans la boîte
+            break;
+          }
         }
         
       int yChange = 45;
@@ -215,8 +240,8 @@ void dessinerChoisir() {
 
 boolean verifMouse(int initX, int finX, int initY, int finY) {
   boolean verif = false;
-  print("mouse X =>" + mouseX + "\n");
-  print("mouse X =>" + mouseY + "\n");
+  /*print("mouse X =>" + mouseX + "\n");
+  print("mouse Y =>" + mouseY + "\n");*/
   cursor(ARROW);
   if(mouseX >= initX && mouseX <= finX && mouseY >= initY && mouseY <= finY ) {
     cursor(HAND);
@@ -227,6 +252,7 @@ boolean verifMouse(int initX, int finX, int initY, int finY) {
 
 void mouseClicked() {
   actualChoice = choiseMoving;
+  //print("choice => " + actualChoice);
 }
 
 void dessinerMot() {
@@ -290,7 +316,7 @@ void dessinerMot() {
     translate(250-transX, 100, 0); 
     noFill();
     fill(255);
-    stroke(255);
+    stroke(0);
     rect(0, 0, tab.size()*35, (gramaire.size()*32));  // Dessine le carré
     
     // Table
@@ -450,6 +476,17 @@ void dessinerMot() {
     xActual = xHistorique; 
   }
   popMatrix();
+  
+  // S'il y a un message d'erreur
+  if( errorMessage.length() > 0 ) {
+    pushMatrix();
+        translate(transX+10, height-10, 0);
+        fill(255,0,0);
+        textAlign(LEFT); 
+        text(errorMessage, 0,0);
+    popMatrix();
+  }
+  
   // ======================
 }
 
@@ -470,6 +507,7 @@ void keyPressed() {
 */
 void popHistorique() {
   if(historique.size() == 1) return;
+  errorMessage = "";
   ArrayList<String> lastDelete = historique.remove(historique.size()-1); // Supprimer le dernier historique
   ArrayList<String> lastHistorique = historique.get(historique.size()-1); // Obtenir le dernier historique après la suppresion
   String lastElementHistorique = lastHistorique.get(lastHistorique.size()-1); // Obtenir le dernier elelment du dernier historique
@@ -540,6 +578,7 @@ void faireEvoluerHistoriuque(){
     return;
   }
   
+  errorMessage = "";
   // Si la regle actuel à faire est pop on va créer une nouvelle pille tout en supprimant l'element a traiter de la pile actuel
   switch(regleSet) {
     case "pop" : {
@@ -557,6 +596,29 @@ void faireEvoluerHistoriuque(){
       // Pop in pile
       ArrayList<String> vide = new ArrayList<String>();
       createNewPile(vide, true);
+      break;
+    }
+    case "0": {
+      String lastEl = getLastElementInTable();
+      String motSuiv = codeWork.get(0).get(0);
+      // Gestion d'erreur
+      ArrayList<String> accept = new ArrayList<String>();
+      // Parcour tableau puor chercher les options possibles
+      for(int i = 0 ; i < tab.size(); i++) {
+        ArrayList<String> ligne = tab.get(i);
+        if(ligne.get(0).equals(lastEl)) {
+             print("element " + ligne.get(0));
+            for(int j = 1 ; j < ligne.size(); j++) {
+              if(!ligne.get(j).equals("0")) {
+                accept.add(tab.get(0).get(j));
+              }
+            }
+        }
+      }
+      
+      
+      errorMessage = "Error : Dans la gramaire,  le somet \"" + lastEl + "\" ne reconnait pas le mot \"" + motSuiv + "\"  - Mots acceptés => "+ accept +"\n";
+      print("Error!\n");
       break;
     }
     default : {

@@ -1,0 +1,4 @@
+debut 
+ a := ;
+ b := ;
+fin
